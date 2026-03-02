@@ -25,62 +25,18 @@ export default function AdminPage() {
   const [previewRating, setPreviewRating] = useState<number | null>(null)
   const [previewHover, setPreviewHover] = useState<number | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [createdSurveyUrl, setCreatedSurveyUrl] = useState<string | null>(null)
-  const [createdSlug, setCreatedSlug] = useState<string | null>(null)
 
   const threshold = formData.positiveThreshold === "5" ? 5 : 4
   const surveySlug = formData.surveyName.toLowerCase().replace(/\s+/g, "-") || "nueva-encuesta"
-  const surveyUrl = createdSurveyUrl ?? `https://reviews.app/s/${surveySlug}`
-  const qrSlug = createdSlug ?? surveySlug
+  const surveyUrl = `https://reviews.app/s/${surveySlug}`
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData({ ...formData, [field]: value })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
-    setErrorMsg(null)
-    try {
-      const payload = {
-        name: formData.surveyName,
-        redirect_url: formData.redirectUrl,
-        rating_threshold: formData.positiveThreshold === "5" ? 5 : 4,
-        filter_enabled: formData.enableFilter,
-        title_text: formData.publicTitle,
-        instruction_text: formData.publicInstruction,
-        thanks_message: formData.positiveMessage,
-        internal_feedback_title: formData.negativeMessage,
-        feedback_placeholder: formData.feedbackPlaceholder,
-      }
-
-      const res = await fetch("/api/surveys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-
-      const json = await res.json()
-      if (!res.ok) {
-        throw new Error(json?.error || "No se pudo crear la encuesta")
-      }
-
-      // update slug/link from backend
-      const createdUrl = json.data?.qr_slug
-        ? `${window.location.origin}/s/${json.data.qr_slug}`
-        : `${window.location.origin}/s/${json.data?.id}`
-
-      setCreatedSurveyUrl(createdUrl)
-      setCreatedSlug(json.data?.qr_slug ?? json.data?.id ?? null)
-      setCreated(true)
-      setCopiedLink(false)
-    } catch (err: any) {
-      setErrorMsg(err.message || "Error desconocido")
-    } finally {
-      setSaving(false)
-    }
+    setCreated(true)
   }
 
   const handleCopyLink = () => {
@@ -152,33 +108,6 @@ export default function AdminPage() {
                 <span className="text-xs font-medium text-gray-700">Ver QR</span>
               </button>
             </div>
-
-            {/* QR persistente */}
-            <div className="rounded-[20px] bg-white p-5 shadow-sm">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Código QR</p>
-              <div className="flex flex-col items-center gap-3">
-                <img
-                  src={`${process.env.NEXT_PUBLIC_QR_FUNCTION_URL || "https://deubaylmksvsnmngvzhs.functions.supabase.co/qr"}?slug=${qrSlug}&size=280`}
-                  alt="QR de la encuesta"
-                  className="h-44 w-44 rounded-2xl border border-gray-100 bg-gray-50 object-contain"
-                />
-                <div className="flex gap-2">
-                  <a
-                    href={`${process.env.NEXT_PUBLIC_QR_FUNCTION_URL || "https://deubaylmksvsnmngvzhs.functions.supabase.co/qr"}?slug=${qrSlug}&size=800&format=png`}
-                    download
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                  >
-                    Descargar PNG
-                  </a>
-                  <button
-                    onClick={handleCopyLink}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#007AFF]/10 px-3 py-2 text-xs font-semibold text-[#007AFF] hover:bg-[#007AFF]/20"
-                  >
-                    Copiar link
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="mt-6 flex gap-3">
@@ -222,11 +151,6 @@ export default function AdminPage() {
           {/* Formulario (3 cols) */}
           <div className="lg:col-span-3">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {errorMsg && (
-                <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {errorMsg}
-                </div>
-              )}
               <div className="rounded-[20px] bg-white p-6 shadow-sm">
                 <h2 className="mb-5 text-base font-semibold text-gray-900">Configuracion</h2>
 
@@ -447,10 +371,9 @@ export default function AdminPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={saving}
-                className="w-full rounded-xl bg-[#007AFF] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#0051D5] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-[#007AFF] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#0051D5] active:scale-[0.98]"
               >
-                {saving ? "Creando..." : "Crear Encuesta"}
+                Crear Encuesta
               </button>
             </form>
           </div>
