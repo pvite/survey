@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { Star, Check, ArrowLeft, QrCode, Copy, MessageSquare } from "lucide-react"
+import { Star, Check, ArrowLeft, QrCode, Copy, MessageSquare, Pencil, Camera } from "lucide-react"
 
 export default function AdminPage() {
   const [formData, setFormData] = useState({
@@ -22,6 +22,15 @@ export default function AdminPage() {
   const [previewHover, setPreviewHover] = useState<number | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setAvatarUrl(url)
+    }
+  }
 
   const threshold = formData.positiveThreshold === "5" ? 5 : 4
   const surveySlug = formData.surveyName.toLowerCase().replace(/\s+/g, "-") || "nueva-encuesta"
@@ -171,33 +180,50 @@ export default function AdminPage() {
             </div>
 
             <div className="px-6 py-8 md:px-10 md:py-10">
-              {/* Logo */}
+              {/* Avatar editable */}
               <div className="mb-8 flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-[14px] bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/20">
-                  <span className="text-3xl font-bold text-white">R</span>
-                </div>
+                <label className="group relative cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="sr-only"
+                  />
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[16px] bg-gradient-to-br from-amber-100 to-amber-50 shadow-lg transition-transform hover:scale-105 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Logo" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">{"😊"}</span>
+                    )}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                    <Camera className="h-3.5 w-3.5" />
+                  </div>
+                </label>
               </div>
 
               {/* Titulo editable in-situ */}
-              <div className="group mb-2">
+              <div className="group relative mb-2">
                 <input
                   type="text"
                   value={formData.publicTitle}
                   onChange={(e) => handleChange("publicTitle", e.target.value)}
-                  className="w-full border-2 border-transparent bg-transparent text-center text-xl font-light text-gray-900 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
+                  className="w-full border-2 border-transparent bg-transparent pr-8 text-center text-xl font-light text-gray-900 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
                   style={{ lineHeight: 1.5 }}
                 />
+                <Pencil className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
               </div>
 
               {/* Instruccion editable in-situ */}
-              <div className="group mb-8">
+              <div className="group relative mb-8">
                 <input
                   type="text"
                   value={formData.publicInstruction}
                   onChange={(e) => handleChange("publicInstruction", e.target.value)}
-                  className="w-full border-2 border-transparent bg-transparent text-center text-sm text-gray-500 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
+                  className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm text-gray-500 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
                   style={{ lineHeight: 1.5 }}
                 />
+                <Pencil className="absolute right-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
               </div>
 
               {/* Estrellas - fijas y prominentes */}
@@ -234,12 +260,15 @@ export default function AdminPage() {
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
                         <Check className="h-6 w-6 text-emerald-600" />
                       </div>
-                      <input
-                        type="text"
-                        value={formData.positiveMessage}
-                        onChange={(e) => handleChange("positiveMessage", e.target.value)}
-                        className="w-full border-2 border-transparent bg-transparent text-center text-sm font-medium text-emerald-700 transition-all hover:border-dashed hover:border-emerald-300 focus:border-emerald-500 focus:outline-none"
-                      />
+                      <div className="group relative">
+                        <input
+                          type="text"
+                          value={formData.positiveMessage}
+                          onChange={(e) => handleChange("positiveMessage", e.target.value)}
+                          className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-emerald-700 transition-all hover:border-dashed hover:border-emerald-300 focus:border-emerald-500 focus:outline-none"
+                        />
+                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                      </div>
                       {formData.enableFilter && (
                         <p className="mt-2 text-xs text-gray-400">
                           Redirige a Google para dejar resena publica
@@ -248,12 +277,15 @@ export default function AdminPage() {
                     </>
                   ) : (
                     <>
-                      <input
-                        type="text"
-                        value={formData.negativeMessage}
-                        onChange={(e) => handleChange("negativeMessage", e.target.value)}
-                        className="w-full border-2 border-transparent bg-transparent text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
-                      />
+                      <div className="group relative">
+                        <input
+                          type="text"
+                          value={formData.negativeMessage}
+                          onChange={(e) => handleChange("negativeMessage", e.target.value)}
+                          className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
+                        />
+                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                      </div>
                       <div className="mt-4 rounded-[10px] border border-gray-200 bg-white px-3 py-2.5">
                         <p className="text-left text-xs text-gray-400">Escribe tu comentario aqui...</p>
                       </div>
