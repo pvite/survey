@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useState, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import {
@@ -13,30 +13,51 @@ import {
   X,
   Printer,
   ArrowRight,
-  PauseCircle,
-  PlayCircle,
 } from "lucide-react"
 
-type UISurvey = {
-  id: string
-  name: string
-  status: "live" | "frozen"
-  responses: number
-  avgRating: number
-  minStars: number
-  redirectUrl?: string | null
-  link: string
-  createdAt?: string | null
-  filterEnabled?: boolean | null
-  qrSlug?: string | null
-}
+/* ── Datos mock ── */
+const surveys = [
+  {
+    id: "1",
+    name: "Satisfaccion Cliente - Centro",
+    status: "live" as const,
+    responses: 142,
+    avgRating: 4.6,
+    minStars: 4,
+    redirectUrl: "google.com/business/napoles",
+    link: "https://reviews.app/s/satisfaccion-cliente",
+    createdAt: "2024-01-15",
+  },
+  {
+    id: "2",
+    name: "Feedback Delivery",
+    status: "frozen" as const,
+    responses: 87,
+    avgRating: 3.8,
+    minStars: 4,
+    redirectUrl: "google.com/business/delivery",
+    link: "https://reviews.app/s/feedback-delivery",
+    createdAt: "2024-02-10",
+  },
+  {
+    id: "3",
+    name: "Nuevo Local - Providencia",
+    status: "live" as const,
+    responses: 0,
+    avgRating: 0,
+    minStars: 4,
+    redirectUrl: "google.com/business/providencia",
+    link: "https://reviews.app/s/nuevo-local-providencia",
+    createdAt: "2025-02-16",
+  },
+]
 
-type DbResponse = {
-  survey_id: string
-  rating: number
-  status?: string | null
-  created_at?: string | null
-}
+/* Datos de impacto mock */
+const impactData = {
+  "1": { todayRedirects: 5, weekRedirects: 23, totalRedirects: 89, todayResponses: 8 },
+  "2": { todayRedirects: 0, weekRedirects: 12, totalRedirects: 45, todayResponses: 2 },
+  "3": { todayRedirects: 0, weekRedirects: 0, totalRedirects: 0, todayResponses: 0 },
+} as Record<string, { todayRedirects: number; weekRedirects: number; totalRedirects: number; todayResponses: number }>
 
 const MAX_ACTIVE_SURVEYS = 3
 
@@ -44,37 +65,6 @@ function getAvgColor(avg: number) {
   if (avg >= 4) return "text-emerald-600"
   if (avg >= 3) return "text-amber-600"
   return "text-rose-600"
-}
-
-function computeImpact(responses: DbResponse[], surveyId: string) {
-  const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const sevenDaysAgo = new Date(now)
-  sevenDaysAgo.setDate(now.getDate() - 7)
-
-  let todayRedirects = 0
-  let todayResponses = 0
-  let weekRedirects = 0
-  let totalRedirects = 0
-
-  responses.forEach((r) => {
-    if (r.survey_id !== surveyId) return
-    const ts = r.created_at ? new Date(r.created_at) : null
-    const isToday = ts ? ts >= startOfToday : false
-    const isWeek = ts ? ts >= sevenDaysAgo : false
-    const redirected = (r.status || "").toUpperCase() === "REDIRECTED"
-
-    if (isToday) {
-      todayResponses += 1
-      if (redirected) todayRedirects += 1
-    }
-    if (redirected) {
-      totalRedirects += 1
-      if (isWeek) weekRedirects += 1
-    }
-  })
-
-  return { todayRedirects, weekRedirects, totalRedirects, todayResponses }
 }
 
 /* Google icon SVG inline */
@@ -95,15 +85,11 @@ function SurveyCard({
   isActive,
   onClick,
   onQR,
-  onShare,
-  onToggle,
 }: {
-  survey: UISurvey
+  survey: (typeof surveys)[0]
   isActive: boolean
   onClick: () => void
   onQR: () => void
-  onShare: () => void
-  onToggle: () => void
 }) {
   const isLive = survey.status === "live"
   const hasResponses = survey.responses > 0
@@ -127,15 +113,7 @@ function SurveyCard({
   return (
     <motion.div
       onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onClick()
-        }
-      }}
-      className="relative w-full cursor-pointer select-none overflow-hidden rounded-[20px] border border-gray-100 bg-white shadow-sm"
+  className="relative w-full cursor-pointer select-none overflow-hidden rounded-[20px] border border-gray-100 bg-white shadow-sm"
       animate={{
         scale: isActive ? 1 : 0.95,
         opacity: isActive ? 1 : 0.55,
@@ -223,14 +201,6 @@ function SurveyCard({
             >
               <QrCode className="h-5 w-5" />
             </button>
-            {/* Compartir */}
-            <button
-              onClick={(e) => { e.stopPropagation(); onShare() }}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-white text-[#007AFF] transition-all hover:bg-blue-50 active:scale-90"
-              title="Compartir"
-            >
-              <Share2 className="h-5 w-5" />
-            </button>
             {/* WhatsApp */}
             <button
               onClick={handleWhatsApp}
@@ -250,14 +220,6 @@ function SurveyCard({
               title={copied ? "Copiado" : "Copiar enlace"}
             >
               {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-            </button>
-            {/* Pausar/activar */}
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggle() }}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-all hover:bg-gray-50 active:scale-90"
-              title={isLive ? "Pausar" : "Activar"}
-            >
-              {isLive ? <PauseCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
             </button>
           </div>
           <Link
@@ -282,7 +244,7 @@ function QRModal({
 }: {
   isOpen: boolean
   onClose: () => void
-  survey: UISurvey | null
+  survey: (typeof surveys)[0] | null
 }) {
   return (
     <AnimatePresence>
@@ -321,11 +283,9 @@ function QRModal({
               </div>
 
               <div className="mb-6 flex justify-center">
-                <img
-                  src={`${process.env.NEXT_PUBLIC_QR_FUNCTION_URL || "https://deubaylmksvsnmngvzhs.functions.supabase.co/qr"}?slug=${survey.qrSlug ?? survey.id}&size=320`}
-                  alt="QR de la encuesta"
-                  className="h-44 w-44 rounded-[20px] border border-gray-100 bg-[#F9FAFB] p-3 object-contain"
-                />
+                <div className="rounded-[20px] border border-gray-100 bg-[#F9FAFB] p-6">
+                  <QrCode className="h-44 w-44 text-gray-800" strokeWidth={1} />
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -355,7 +315,7 @@ function SharingSheet({
 }: {
   isOpen: boolean
   onClose: () => void
-  survey: UISurvey | null
+  survey: (typeof surveys)[0] | null
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -513,72 +473,13 @@ function SharingSheet({
 /* ── Pagina Principal ── */
 export default function HomePage() {
   const [activeIndex, setActiveIndex] = useState(0)
-  const [surveyList, setSurveyList] = useState<UISurvey[]>([])
-  const [allResponses, setAllResponses] = useState<DbResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [surveyList] = useState(surveys)
   const [sharingOpen, setSharingOpen] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
-  const [modalSurvey, setModalSurvey] = useState<UISurvey | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const activeSurvey = surveyList[activeIndex]
-  const impact = activeSurvey
-    ? computeImpact(allResponses, activeSurvey.id)
-    : { todayRedirects: 0, weekRedirects: 0, totalRedirects: 0, todayResponses: 0 }
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [surveysRes, responsesRes] = await Promise.all([
-          fetch("/api/surveys").then((r) => r.json()),
-          fetch("/api/responses").then((r) => r.json()),
-        ])
-
-        const surveysData = (surveysRes?.data ?? []) as any[]
-        const responsesData = (responsesRes?.data ?? []) as DbResponse[]
-
-        setAllResponses(responsesData)
-
-        const bySurvey = responsesData.reduce<Record<string, { count: number; sum: number }>>((acc, r) => {
-          const key = r.survey_id
-          if (!acc[key]) acc[key] = { count: 0, sum: 0 }
-          acc[key].count += 1
-          acc[key].sum += Number(r.rating || 0)
-          return acc
-        }, {})
-
-        const mapped: UISurvey[] = surveysData.map((s) => {
-          const stats = bySurvey[s.id] || { count: 0, sum: 0 }
-          const responses = stats.count
-          const avgRating = responses > 0 ? Number((stats.sum / responses).toFixed(1)) : 0
-          const link = s.qr_slug ? `https://reviews.app/s/${s.qr_slug}` : `https://reviews.app/s/${s.id}`
-          return {
-            id: s.id,
-            name: s.name ?? "Encuesta",
-            status: (s.status as "live" | "frozen") || (s.filter_enabled === false ? "frozen" : "live"),
-            responses,
-            avgRating,
-            minStars: s.rating_threshold ?? 4,
-            redirectUrl: s.redirect_url,
-            link,
-            createdAt: s.created_at,
-            filterEnabled: s.filter_enabled,
-            qrSlug: s.qr_slug,
-          }
-        })
-
-        setSurveyList(mapped)
-        setModalSurvey(mapped[0] ?? null)
-      } catch (err) {
-        console.error("Error loading data", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
+  const impact = activeSurvey ? impactData[activeSurvey.id] || { todayRedirects: 0, weekRedirects: 0, totalRedirects: 0, todayResponses: 0 } : { todayRedirects: 0, weekRedirects: 0, totalRedirects: 0, todayResponses: 0 }
 
   const getCardWidth = () => {
     if (!scrollRef.current) return 340
@@ -603,29 +504,6 @@ export default function HomePage() {
     setActiveIndex(Math.min(index, surveyList.length - 1))
   }
 
-  // Mantener sincronizado el modal con la tarjeta activa
-  useEffect(() => {
-    if (!qrOpen && !sharingOpen) {
-      setModalSurvey(activeSurvey || null)
-    }
-  }, [activeSurvey, qrOpen, sharingOpen])
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#F9FAFB] flex items-center justify-center text-gray-500">
-        Cargando encuestas...
-      </main>
-    )
-  }
-
-  if (!surveyList.length) {
-    return (
-      <main className="min-h-screen bg-[#F9FAFB] flex items-center justify-center text-gray-500">
-        No hay encuestas aún. Crea una en el panel de administración.
-      </main>
-    )
-  }
-
   return (
     <main className="min-h-screen bg-[#F9FAFB] pb-24 md:pb-8">
       <div className="mx-auto max-w-2xl">
@@ -633,9 +511,6 @@ export default function HomePage() {
         <div className="px-5 pt-6 pb-4">
           <p className="text-sm font-medium text-gray-400">Panel de control</p>
           <h1 className="text-2xl font-semibold text-gray-900">Tus Encuestas</h1>
-          <p className="mt-1 text-xs text-gray-500">
-            {surveyList.filter((s) => s.status === "live").length}/{MAX_ACTIVE_SURVEYS} encuestas activas (máximo)
-          </p>
         </div>
 
         {/* Survey Cards Carousel */}
@@ -651,28 +526,7 @@ export default function HomePage() {
                 survey={survey}
                 isActive={i === activeIndex}
                 onClick={() => scrollToCard(i)}
-                onQR={() => { setModalSurvey(survey); setQrOpen(true) }}
-                onShare={() => { setModalSurvey(survey); setSharingOpen(true) }}
-                onToggle={async () => {
-                  setTogglingId(survey.id)
-                  const nextStatus = survey.status === "live" ? "frozen" : "live"
-                  try {
-                    const res = await fetch(`/api/surveys/${survey.id}?id=${survey.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ status: nextStatus, id: survey.id }),
-                    })
-                    const json = await res.json()
-                    if (!res.ok) throw new Error(json?.error || "No se pudo actualizar")
-                    setSurveyList((prev) =>
-                      prev.map((s) => (s.id === survey.id ? { ...s, status: nextStatus as "live" | "frozen" } : s))
-                    )
-                  } catch (err) {
-                    console.error(err)
-                  } finally {
-                    setTogglingId(null)
-                  }
-                }}
+                onQR={() => setQrOpen(true)}
               />
             </div>
           ))}
@@ -796,10 +650,7 @@ export default function HomePage() {
 
         {/* Principal: Mostrar QR */}
         <motion.button
-          onClick={() => {
-            setModalSurvey(activeSurvey || null)
-            setQrOpen(true)
-          }}
+          onClick={() => setQrOpen(true)}
           className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#007AFF] shadow-lg shadow-blue-500/30"
           whileTap={{ scale: 0.9 }}
           whileHover={{ scale: 1.06 }}
@@ -810,8 +661,8 @@ export default function HomePage() {
       </div>
 
       {/* Modals */}
-      <QRModal isOpen={qrOpen} onClose={() => setQrOpen(false)} survey={modalSurvey} />
-      <SharingSheet isOpen={sharingOpen} onClose={() => setSharingOpen(false)} survey={modalSurvey} />
+      <QRModal isOpen={qrOpen} onClose={() => setQrOpen(false)} survey={activeSurvey} />
+      <SharingSheet isOpen={sharingOpen} onClose={() => setSharingOpen(false)} survey={activeSurvey} />
     </main>
   )
 }

@@ -14,91 +14,118 @@ import {
   ArrowUpDown,
 } from "lucide-react"
 
-type DbResponse = {
-  id: string
-  display_id?: number | null
-  survey_id: string
-  rating: number
-  comment?: string | null
-  status?: string | null
-  source?: string | null
-  customer_full_name?: string | null
-  customer_email?: string | null
-  customer_phone?: string | null
-  created_at?: string | null
-}
-
-type DbSurvey = {
-  id: string
-  name?: string | null
-  internal_identifier?: string | null
-}
+// Mock data para las respuestas
+const mockResponses = [
+  {
+    id: "1",
+    refId: "RES-1234",
+    surveyId: "1",
+    surveyName: "Satisfacción Cliente - Centro",
+    clientName: "Pizzería Nápoles",
+    rating: 5,
+    comment: "Excelente servicio y comida deliciosa. ¡Volveré pronto!",
+    redirected: true,
+    timestamp: "2024-03-15T14:30:00",
+    source: "QR",
+  },
+  {
+    id: "2",
+    refId: "RES-1235",
+    surveyId: "1",
+    surveyName: "Satisfacción Cliente - Centro",
+    clientName: "Pizzería Nápoles",
+    rating: 4,
+    comment: "Muy buena experiencia, solo la espera fue un poco larga.",
+    redirected: true,
+    timestamp: "2024-03-15T16:45:00",
+    source: "Link",
+  },
+  {
+    id: "3",
+    refId: "RES-1236",
+    surveyId: "1",
+    surveyName: "Satisfacción Cliente - Centro",
+    clientName: "Pizzería Nápoles",
+    rating: 2,
+    comment: "La pizza llegó fría y el pedido tardó demasiado.",
+    redirected: false,
+    timestamp: "2024-03-14T19:20:00",
+    source: "WhatsApp",
+  },
+  {
+    id: "4",
+    refId: "RES-1237",
+    surveyId: "2",
+    surveyName: "Feedback Sucursal Norte",
+    clientName: "Pizzería Nápoles",
+    rating: 5,
+    comment: "¡Increíble! La mejor pizza que he probado.",
+    redirected: true,
+    timestamp: "2024-03-14T12:10:00",
+    source: "QR",
+  },
+  {
+    id: "5",
+    refId: "RES-1238",
+    surveyId: "2",
+    surveyName: "Feedback Sucursal Norte",
+    clientName: "Pizzería Nápoles",
+    rating: 3,
+    comment: "Normal, nada excepcional. El precio es alto para lo que ofrecen.",
+    redirected: false,
+    timestamp: "2024-03-13T18:30:00",
+    source: "Link",
+  },
+  {
+    id: "6",
+    refId: "RES-1239",
+    surveyId: "3",
+    surveyName: "Encuesta Plaza Central",
+    clientName: "Café Aroma",
+    rating: 5,
+    comment: "Café excelente, ambiente acogedor.",
+    redirected: true,
+    timestamp: "2024-03-12T10:15:00",
+    source: "QR",
+  },
+]
 
 const ITEMS_PER_PAGE = 20
 
 export default function ResponsesPage() {
   const searchParams = useSearchParams()
   const surveyIdParam = searchParams.get("encuesta_id")
-  const surveyParam = searchParams.get("survey")
 
-  const [responses, setResponses] = useState<DbResponse[]>([])
-  const [surveys, setSurveys] = useState<DbSurvey[]>([])
-  const [loading, setLoading] = useState(true)
+  const [responses] = useState(mockResponses)
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedSurvey, setSelectedSurvey] = useState<string>(surveyParam || surveyIdParam || "all")
+  const [selectedSurvey, setSelectedSurvey] = useState<string>(surveyIdParam || "all")
   const [ratingFilter, setRatingFilter] = useState<string>("all")
   const [redirectFilter, setRedirectFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [resResponses, resSurveys] = await Promise.all([
-          fetch("/api/responses").then((r) => r.json()),
-          fetch("/api/surveys").then((r) => r.json()),
-        ])
-        setResponses(resResponses?.data ?? [])
-        setSurveys(resSurveys?.data ?? [])
-      } catch (err) {
-        console.error("Error fetching responses", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
-  }, [])
-
-  const uniqueSurveys = surveys.map((s) => ({
-    id: s.id,
-    name: s.name || "Encuesta",
-    clientName: s.internal_identifier || "",
-  }))
-
-  const enrichedResponses = responses.map((r) => {
-    const survey = surveys.find((s) => s.id === r.survey_id)
-    const ref = r.display_id ? `RES-${String(r.display_id).padStart(4, "0")}` : r.id.slice(0, 8).toUpperCase()
+  // Get unique surveys for the filter dropdown
+  const uniqueSurveys = Array.from(new Set(mockResponses.map((r) => r.surveyId))).map((id) => {
+    const response = mockResponses.find((r) => r.surveyId === id)
     return {
-      ...r,
-      surveyName: survey?.name || "Encuesta",
-      clientName: survey?.internal_identifier || "",
-      refId: ref,
-      redirected: (r.status || "").toUpperCase() === "REDIRECTED",
-      timestamp: r.created_at || "",
+      id,
+      name: response?.surveyName || "",
+      clientName: response?.clientName || "",
     }
   })
 
-  const filteredResponses = enrichedResponses.filter((response) => {
+  // Filter responses
+  const filteredResponses = responses.filter((response) => {
     const matchesSearch =
       response.surveyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       response.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (response.comment || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      response.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
       response.refId.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesSurvey = selectedSurvey === "all" || response.survey_id === selectedSurvey
+    const matchesSurvey = selectedSurvey === "all" || response.surveyId === selectedSurvey
 
-    const matchesRating = ratingFilter === "all" || response.rating?.toString() === ratingFilter
+    const matchesRating = ratingFilter === "all" || response.rating.toString() === ratingFilter
 
     const matchesRedirect =
       redirectFilter === "all" ||
@@ -126,12 +153,10 @@ export default function ResponsesPage() {
 
   // Auto-select survey if coming from URL parameter
   useEffect(() => {
-    if (surveyParam) {
-      setSelectedSurvey(surveyParam)
-    } else if (surveyIdParam) {
+    if (surveyIdParam) {
       setSelectedSurvey(surveyIdParam)
     }
-  }, [surveyParam, surveyIdParam])
+  }, [surveyIdParam])
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp)
@@ -172,22 +197,6 @@ export default function ResponsesPage() {
 
   const toggleSort = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#F9FAFB] flex items-center justify-center text-gray-500">
-        Cargando respuestas...
-      </main>
-    )
-  }
-
-  if (!responses.length) {
-    return (
-      <main className="min-h-screen bg-[#F9FAFB] flex items-center justify-center text-gray-500">
-        No hay respuestas aún.
-      </main>
-    )
   }
 
   return (
