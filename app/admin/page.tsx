@@ -15,6 +15,12 @@ export default function AdminPage() {
     publicInstruction: "Toca una estrella para calificar",
     positiveMessage: "Gracias! Tu opinion nos ayuda mucho.",
     negativeMessage: "Lamentamos que tu experiencia no haya sido perfecta. Cuentanos que paso.",
+    enableFeedbackCapture: true,
+    captureFields: {
+      name: true,
+      whatsapp: true,
+      email: false,
+    },
   })
 
   const [created, setCreated] = useState(false)
@@ -23,6 +29,7 @@ export default function AdminPage() {
   const [copiedLink, setCopiedLink] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [feedbackStep, setFeedbackStep] = useState<1 | 2>(1)
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -38,6 +45,16 @@ export default function AdminPage() {
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData({ ...formData, [field]: value })
+  }
+
+  const handleCaptureFieldToggle = (field: "name" | "whatsapp" | "email") => {
+    setFormData({
+      ...formData,
+      captureFields: {
+        ...formData.captureFields,
+        [field]: !formData.captureFields[field],
+      },
+    })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -232,7 +249,7 @@ export default function AdminPage() {
                   <button
                     key={starValue}
                     type="button"
-                    onClick={() => setPreviewRating(starValue)}
+                    onClick={() => { setPreviewRating(starValue); setFeedbackStep(1) }}
                     onMouseEnter={() => setPreviewHover(starValue)}
                     onMouseLeave={() => setPreviewHover(null)}
                     className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
@@ -286,9 +303,80 @@ export default function AdminPage() {
                         />
                         <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
                       </div>
-                      <div className="mt-4 rounded-[10px] border border-gray-200 bg-white px-3 py-2.5">
-                        <p className="text-left text-xs text-gray-400">Escribe tu comentario aqui...</p>
-                      </div>
+
+                      {formData.enableFeedbackCapture && (
+                        <div className="mt-4 space-y-3">
+                          {feedbackStep === 1 ? (
+                            <>
+                              {/* Paso 1: Comentario */}
+                              <div className="rounded-[10px] border border-gray-200 bg-white">
+                                <textarea
+                                  disabled
+                                  placeholder="Cuentanos que paso..."
+                                  className="h-20 w-full resize-none rounded-[10px] bg-transparent px-3 py-2.5 text-sm text-gray-400 placeholder:text-gray-300"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setFeedbackStep(2)}
+                                className="w-full rounded-[10px] bg-emerald-600 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-700"
+                              >
+                                Continuar
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {/* Paso 2: Datos de contacto */}
+                              <div className="rounded-[12px] border border-emerald-100 bg-emerald-50/50 p-4">
+                                <p className="mb-3 text-center text-xs font-medium text-gray-600">
+                                  Dejanos tu contacto si quieres que te llamemos
+                                </p>
+                                <div className="space-y-2">
+                                  {formData.captureFields.name && (
+                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
+                                      <p className="text-xs text-gray-300">Nombre</p>
+                                    </div>
+                                  )}
+                                  {formData.captureFields.whatsapp && (
+                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
+                                      <p className="text-xs text-gray-300">WhatsApp</p>
+                                    </div>
+                                  )}
+                                  {formData.captureFields.email && (
+                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
+                                      <p className="text-xs text-gray-300">Correo electronico</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setFeedbackStep(1)}
+                                  className="flex-1 rounded-[10px] border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50"
+                                >
+                                  Atras
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex-1 rounded-[10px] bg-emerald-600 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-700"
+                                >
+                                  Enviar
+                                </button>
+                              </div>
+                              <p className="text-center text-[10px] text-gray-400">
+                                Los campos son opcionales
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {!formData.enableFeedbackCapture && (
+                        <p className="mt-3 text-center text-xs text-gray-400">
+                          Captura de feedback desactivada
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
@@ -372,6 +460,72 @@ export default function AdminPage() {
                         <span className="text-sm text-gray-700">Solo 5 estrellas</span>
                       </label>
                     </div>
+                  </div>
+
+                  {/* Captura de feedback */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Capturar feedback bajo el umbral</p>
+                        <p className="text-xs text-gray-400">Solicita comentario y datos de contacto</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleChange("enableFeedbackCapture", !formData.enableFeedbackCapture)}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                          formData.enableFeedbackCapture ? "bg-emerald-600" : "bg-gray-300"
+                        }`}
+                        role="switch"
+                        aria-checked={formData.enableFeedbackCapture}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                            formData.enableFeedbackCapture ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {formData.enableFeedbackCapture && (
+                      <div className="mt-4 rounded-[10px] bg-gray-50 p-3">
+                        <p className="mb-2.5 text-xs font-medium text-gray-500">Campos a solicitar (opcionales para el cliente)</p>
+                        <div className="flex flex-wrap gap-2">
+                          <label className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
+                            formData.captureFields.name ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={formData.captureFields.name}
+                              onChange={() => handleCaptureFieldToggle("name")}
+                              className="sr-only"
+                            />
+                            <span>Nombre</span>
+                          </label>
+                          <label className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
+                            formData.captureFields.whatsapp ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={formData.captureFields.whatsapp}
+                              onChange={() => handleCaptureFieldToggle("whatsapp")}
+                              className="sr-only"
+                            />
+                            <span>WhatsApp</span>
+                          </label>
+                          <label className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
+                            formData.captureFields.email ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={formData.captureFields.email}
+                              onChange={() => handleCaptureFieldToggle("email")}
+                              className="sr-only"
+                            />
+                            <span>Correo</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
