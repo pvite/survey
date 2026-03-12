@@ -488,7 +488,7 @@ export default function AdminPage() {
 
                     {formData.enableFeedbackCapture && (
                       <div className="mt-4 rounded-[10px] bg-gray-50 p-3">
-                        <p className="mb-2.5 text-xs font-medium text-gray-500">Campos a solicitar (opcionales para el cliente)</p>
+                        <p className="mb-2.5 text-xs font-medium text-gray-500">Datos de contacto a solicitar (opcionales para el cliente)</p>
                         <div className="flex flex-wrap gap-2">
                           <label className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
                             formData.captureFields.name ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
