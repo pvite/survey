@@ -211,7 +211,7 @@ export default function AdminPage() {
                   className="w-full border-2 border-transparent bg-transparent pr-8 text-center text-xl font-light text-gray-900 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
                   style={{ lineHeight: 1.5 }}
                 />
-                <Pencil className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                <Pencil className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
               </div>
 
               {/* Instruccion editable in-situ */}
@@ -223,7 +223,7 @@ export default function AdminPage() {
                   className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm text-gray-500 transition-all placeholder:text-gray-300 hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none focus:ring-0"
                   style={{ lineHeight: 1.5 }}
                 />
-                <Pencil className="absolute right-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                <Pencil className="absolute right-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-300" />
               </div>
 
               {/* Estrellas - fijas y prominentes */}
@@ -267,7 +267,7 @@ export default function AdminPage() {
                           onChange={(e) => handleChange("positiveMessage", e.target.value)}
                           className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-emerald-700 transition-all hover:border-dashed hover:border-emerald-300 focus:border-emerald-500 focus:outline-none"
                         />
-                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-emerald-400" />
                       </div>
                       {formData.enableFilter && (
                         <p className="mt-2 text-xs text-gray-400">
@@ -284,7 +284,7 @@ export default function AdminPage() {
                           onChange={(e) => handleChange("negativeMessage", e.target.value)}
                           className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
                         />
-                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
                       </div>
                       <div className="mt-4 rounded-[10px] border border-gray-200 bg-white px-3 py-2.5">
                         <p className="text-left text-xs text-gray-400">Escribe tu comentario aqui...</p>
