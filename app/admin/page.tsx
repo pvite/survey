@@ -3,7 +3,8 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { Star, Check, ArrowLeft, QrCode, Copy, MessageSquare, Pencil, Camera } from "lucide-react"
+import { Star, Check, ArrowLeft, QrCode, Copy, MessageSquare, Pencil, Camera, ChevronLeft } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function AdminPage() {
   const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ export default function AdminPage() {
   const [copiedLink, setCopiedLink] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [feedbackStep, setFeedbackStep] = useState<1 | 2>(1)
+  const [previewStep, setPreviewStep] = useState<"stars" | "comment" | "contact">("stars")
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -190,7 +191,7 @@ export default function AdminPage() {
           </div>
 
           {/* Tarjeta de encuesta - Editor principal */}
-          <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <div className="relative min-h-[480px] overflow-hidden rounded-[16px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
             {/* Barra superior estilo mobile */}
             <div className="flex items-center justify-center border-b border-gray-100 py-3">
               <div className="h-1 w-10 rounded-full bg-gray-200" />
@@ -249,7 +250,15 @@ export default function AdminPage() {
                   <button
                     key={starValue}
                     type="button"
-                    onClick={() => { setPreviewRating(starValue); setFeedbackStep(1) }}
+                    onClick={() => {
+                      setPreviewRating(starValue)
+                      // Si es bajo el umbral y tiene feedback activado, ir al paso de comentario
+                      if (starValue < threshold && formData.enableFeedbackCapture) {
+                        setTimeout(() => setPreviewStep("comment"), 300)
+                      } else {
+                        setPreviewStep("stars")
+                      }
+                    }}
                     onMouseEnter={() => setPreviewHover(starValue)}
                     onMouseLeave={() => setPreviewHover(null)}
                     className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
@@ -269,117 +278,53 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              {/* Resultado del preview */}
-              {previewRating && (
-                <div className="animate-fade-in mt-4 rounded-[12px] bg-gray-50 p-5 text-center">
-                  {previewRating >= threshold ? (
-                    <>
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-                        <Check className="h-6 w-6 text-emerald-600" />
-                      </div>
-                      <div className="group relative">
-                        <input
-                          type="text"
-                          value={formData.positiveMessage}
-                          onChange={(e) => handleChange("positiveMessage", e.target.value)}
-                          className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-emerald-700 transition-all hover:border-dashed hover:border-emerald-300 focus:border-emerald-500 focus:outline-none"
-                        />
-                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-emerald-400" />
-                      </div>
-                      {formData.enableFilter && (
-                        <p className="mt-2 text-xs text-gray-400">
-                          Redirige a Google para dejar resena publica
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="group relative">
-                        <input
-                          type="text"
-                          value={formData.negativeMessage}
-                          onChange={(e) => handleChange("negativeMessage", e.target.value)}
-                          className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
-                        />
-                        <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-                      </div>
-
-                      {formData.enableFeedbackCapture && (
-                        <div className="mt-4 space-y-3">
-                          {feedbackStep === 1 ? (
-                            <>
-                              {/* Paso 1: Comentario */}
-                              <div className="rounded-[10px] border border-gray-200 bg-white">
-                                <textarea
-                                  disabled
-                                  placeholder="Cuentanos que paso..."
-                                  className="h-20 w-full resize-none rounded-[10px] bg-transparent px-3 py-2.5 text-sm text-gray-400 placeholder:text-gray-300"
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setFeedbackStep(2)}
-                                className="w-full rounded-[10px] bg-emerald-600 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-700"
-                              >
-                                Continuar
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {/* Paso 2: Datos de contacto */}
-                              <div className="rounded-[12px] border border-emerald-100 bg-emerald-50/50 p-4">
-                                <p className="mb-3 text-center text-xs font-medium text-gray-600">
-                                  Dejanos tu contacto si quieres que te llamemos
-                                </p>
-                                <div className="space-y-2">
-                                  {formData.captureFields.name && (
-                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
-                                      <p className="text-xs text-gray-300">Nombre</p>
-                                    </div>
-                                  )}
-                                  {formData.captureFields.whatsapp && (
-                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
-                                      <p className="text-xs text-gray-300">WhatsApp</p>
-                                    </div>
-                                  )}
-                                  {formData.captureFields.email && (
-                                    <div className="rounded-[8px] border border-gray-200 bg-white px-3 py-2">
-                                      <p className="text-xs text-gray-300">Correo electronico</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setFeedbackStep(1)}
-                                  className="flex-1 rounded-[10px] border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50"
-                                >
-                                  Atras
-                                </button>
-                                <button
-                                  type="button"
-                                  className="flex-1 rounded-[10px] bg-emerald-600 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-700"
-                                >
-                                  Enviar
-                                </button>
-                              </div>
-                              <p className="text-center text-[10px] text-gray-400">
-                                Los campos son opcionales
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {!formData.enableFeedbackCapture && (
-                        <p className="mt-3 text-center text-xs text-gray-400">
-                          Captura de feedback desactivada
-                        </p>
-                      )}
-                    </>
+              {/* Resultado del preview - Solo para rating positivo */}
+              {previewRating && previewRating >= threshold && previewStep === "stars" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 rounded-[12px] bg-gray-50 p-5 text-center"
+                >
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                    <Check className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="group relative">
+                    <input
+                      type="text"
+                      value={formData.positiveMessage}
+                      onChange={(e) => handleChange("positiveMessage", e.target.value)}
+                      className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-emerald-700 transition-all hover:border-dashed hover:border-emerald-300 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-emerald-400" />
+                  </div>
+                  {formData.enableFilter && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      Redirige a Google para dejar resena publica
+                    </p>
                   )}
-                </div>
+                </motion.div>
+              )}
+
+              {/* Indicador para rating negativo sin feedback */}
+              {previewRating && previewRating < threshold && !formData.enableFeedbackCapture && previewStep === "stars" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 rounded-[12px] bg-gray-50 p-5 text-center"
+                >
+                  <div className="group relative">
+                    <input
+                      type="text"
+                      value={formData.negativeMessage}
+                      onChange={(e) => handleChange("negativeMessage", e.target.value)}
+                      className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <p className="mt-3 text-center text-xs text-gray-400">
+                    Captura de feedback desactivada
+                  </p>
+                </motion.div>
               )}
 
               {!previewRating && (
@@ -388,6 +333,150 @@ export default function AdminPage() {
                 </p>
               )}
             </div>
+
+            {/* Multi-step feedback flow - Pantallas separadas */}
+            <AnimatePresence mode="wait">
+              {previewStep === "comment" && previewRating && previewRating < threshold && formData.enableFeedbackCapture && (
+                <motion.div
+                  key="comment-step"
+                  initial={{ x: "100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "-100%", opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute inset-0 flex flex-col bg-white"
+                >
+                  {/* Header con boton atras */}
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewStep("stars")
+                        setPreviewRating(null)
+                      }}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-all hover:bg-gray-200"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Cuentanos que paso</p>
+                      <p className="text-xs text-gray-400">Tu opinion nos ayuda a mejorar</p>
+                    </div>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="flex flex-1 flex-col p-6">
+                    {/* Mensaje editable */}
+                    <div className="group relative mb-4">
+                      <input
+                        type="text"
+                        value={formData.negativeMessage}
+                        onChange={(e) => handleChange("negativeMessage", e.target.value)}
+                        className="w-full border-2 border-transparent bg-transparent pr-6 text-center text-sm font-medium text-gray-700 transition-all hover:border-dashed hover:border-gray-300 focus:border-emerald-500 focus:outline-none"
+                      />
+                      <Pencil className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                    </div>
+
+                    {/* Campo de comentario */}
+                    <div className="flex-1 rounded-[12px] border border-gray-200 bg-gray-50">
+                      <textarea
+                        disabled
+                        placeholder="Escribe tu comentario aqui..."
+                        className="h-full min-h-[120px] w-full resize-none rounded-[12px] bg-transparent p-4 text-sm text-gray-500 placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    {/* Botones */}
+                    <div className="mt-4 flex gap-3">
+                      {(formData.captureFields.name || formData.captureFields.whatsapp || formData.captureFields.email) && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewStep("contact")}
+                          className="flex-1 rounded-[12px] bg-emerald-600 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-700"
+                        >
+                          Continuar
+                        </button>
+                      )}
+                      {!(formData.captureFields.name || formData.captureFields.whatsapp || formData.captureFields.email) && (
+                        <button
+                          type="button"
+                          className="flex-1 rounded-[12px] bg-emerald-600 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-700"
+                        >
+                          Enviar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {previewStep === "contact" && previewRating && previewRating < threshold && formData.enableFeedbackCapture && (
+                <motion.div
+                  key="contact-step"
+                  initial={{ x: "100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "-100%", opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute inset-0 flex flex-col bg-white"
+                >
+                  {/* Header con boton atras */}
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewStep("comment")}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-all hover:bg-gray-200"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Datos de contacto</p>
+                      <p className="text-xs text-gray-400">Opcional - si quieres que te contactemos</p>
+                    </div>
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="flex flex-1 flex-col p-6">
+                    <div className="space-y-3">
+                      {formData.captureFields.name && (
+                        <div>
+                          <label className="mb-1.5 block text-xs font-medium text-gray-500">Nombre</label>
+                          <div className="rounded-[10px] border border-gray-200 bg-gray-50 px-4 py-3">
+                            <p className="text-sm text-gray-300">Tu nombre</p>
+                          </div>
+                        </div>
+                      )}
+                      {formData.captureFields.whatsapp && (
+                        <div>
+                          <label className="mb-1.5 block text-xs font-medium text-gray-500">WhatsApp</label>
+                          <div className="rounded-[10px] border border-gray-200 bg-gray-50 px-4 py-3">
+                            <p className="text-sm text-gray-300">+56 9 1234 5678</p>
+                          </div>
+                        </div>
+                      )}
+                      {formData.captureFields.email && (
+                        <div>
+                          <label className="mb-1.5 block text-xs font-medium text-gray-500">Correo electronico</label>
+                          <div className="rounded-[10px] border border-gray-200 bg-gray-50 px-4 py-3">
+                            <p className="text-sm text-gray-300">correo@ejemplo.com</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-auto pt-6">
+                      <button
+                        type="button"
+                        className="w-full rounded-[12px] bg-emerald-600 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-700"
+                      >
+                        Enviar feedback
+                      </button>
+                      <p className="mt-2 text-center text-[11px] text-gray-400">
+                        Puedes omitir estos campos si prefieres
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Configuracion compacta */}
